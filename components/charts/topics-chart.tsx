@@ -51,7 +51,7 @@ export function TopicsChart({ data, color = "#10b981" }: Props) {
             fontSize: "12px",
           }}
           itemStyle={{ color: "hsl(var(--foreground))" }}
-          formatter={(value: number) => [<span style={{ color, fontWeight: 'bold' }}>{value}</span>, "Solved"]}
+          formatter={(value: unknown) => [<span style={{ color, fontWeight: 'bold' }}>{value as number}</span>, "Solved"]}
         />
         <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20} fill={color}>
           {chartData.map((entry, index) => (
