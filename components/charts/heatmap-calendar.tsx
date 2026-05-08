@@ -96,7 +96,7 @@ export function HeatmapCalendar({
     }
 
     let currentX = 0;
-    for (const group of monthGroups.values()) {
+    for (const group of Array.from(monthGroups.values())) {
       const firstDayOfWeek = new Date(group.year, group.month, 1).getDay();
       let maxCol = 0;
 
