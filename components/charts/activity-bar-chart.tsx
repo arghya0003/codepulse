@@ -93,7 +93,7 @@ export function ActivityBarChart({ data }: Props) {
             padding: "12px",
           }}
           labelStyle={{ color: "rgba(255, 255, 255, 0.9)", fontWeight: 600, marginBottom: "8px" }}
-          itemStyle={{ paddingVertical: "2px", fontWeight: 500 }}
+          itemStyle={{ paddingTop: "2px", paddingBottom: "2px", fontWeight: 500 }}
         />
         <Legend wrapperStyle={{ fontSize: 11, paddingTop: "8px" }} iconType="circle" />
         <Bar dataKey="github" stackId="a" fill={PLATFORM_COLORS.github} name="GitHub" radius={[2, 2, 2, 2]} />
