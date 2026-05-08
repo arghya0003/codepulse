@@ -5,147 +5,96 @@ import { getUserPlatforms, updatePlatformStats } from "@/actions/platforms";
 import { upsertSnapshots } from "@/actions/contributions";
 import { fetchAllowed } from "@/lib/fetch-allowed";
 
-const HADES_BASE = "https://hades.mani.works/api";
-
-/**
- * Codeforces platform sync.
- * Uses the Hades unified API (hades.mani.works) to fetch
- * profile data and submission history.
- */
 export async function GET(req: NextRequest) {
   const { userId: clerkId } = await auth();
-  if (!clerkId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { allowed, remaining } = await checkRateLimit(clerkId, "codeforces");
-  if (!allowed) {
-    return NextResponse.json(
-      { error: "Rate limit exceeded. Try again in 60 seconds." },
-      { status: 429, headers: { "X-RateLimit-Remaining": remaining.toString() } }
-    );
-  }
+  const { allowed } = await checkRateLimit(clerkId, "codeforces");
+  if (!allowed) return NextResponse.json({ error: "Rate limit exceeded." }, { status: 429 });
 
   const profiles = await getUserPlatforms(clerkId);
   const cfProfile = profiles.find((p) => p.platform === "codeforces");
-  if (!cfProfile) {
-    return NextResponse.json(
-      { error: "Codeforces account not connected. Link it in Settings." },
-      { status: 404 }
-    );
-  }
-  const handle = cfProfile.handle;
+  if (!cfProfile) return NextResponse.json({ error: "Codeforces not connected." }, { status: 404 });
 
+  const handle = cfProfile.handle;
   const cacheKey = CACHE_KEYS.platformData("codeforces", handle);
   const cached = await getCached(cacheKey);
-  if (cached) {
-    return NextResponse.json({ ...cached as object, source: "cache" });
-  }
+  if (cached) return NextResponse.json({ ...cached as object, source: "cache" });
 
   try {
-    // ── 1. Fetch user profile ─────────────────────────────────────────────────
-    const profileRes = await fetchAllowed(
-      `${HADES_BASE}/codeforces/user/${encodeURIComponent(handle)}`
-    );
-    if (!profileRes.ok) {
-      throw new Error(`Hades CF profile error: ${profileRes.status} ${profileRes.statusText}`);
-    }
-    const profileJson = await profileRes.json();
+    // ── Profile + submissions + rating history in parallel ────────────────────
+    const [infoRes, subRes, histRes] = await Promise.all([
+      fetchAllowed(`https://codeforces.com/api/user.info?handles=${encodeURIComponent(handle)}`),
+      fetchAllowed(`https://codeforces.com/api/user.status?handle=${encodeURIComponent(handle)}&from=1&count=10000`),
+      fetchAllowed(`https://codeforces.com/api/user.rating?handle=${encodeURIComponent(handle)}`),
+    ]);
 
-    // Hades wraps the raw CF API response: { status, data: { status, result: [...] } }
-    const cfUser = profileJson?.data?.result?.[0];
-    if (!cfUser) {
-      throw new Error("No Codeforces user data returned from Hades");
-    }
+    if (!infoRes.ok) throw new Error(`CF user.info ${infoRes.status}`);
+    const infoData = await infoRes.json();
+    if (infoData.status !== "OK") throw new Error(`CF API: ${infoData.comment ?? "error"}`);
+    const cfUser = infoData.result[0];
 
-    const rating     = cfUser.rating     ?? null;
-    const maxRating  = cfUser.maxRating  ?? null;
-    const rank       = cfUser.rank       ?? null;
-    const maxRank    = cfUser.maxRank    ?? null;
-    const avatarUrl  = cfUser.titlePhoto ?? cfUser.avatar ?? null;
-    const displayName =
-      [cfUser.firstName, cfUser.lastName].filter(Boolean).join(" ") || handle;
+    const rating     = cfUser.rating    ?? null;
+    const maxRating  = cfUser.maxRating ?? null;
+    const rank       = cfUser.rank      ?? null;
+    const maxRank    = cfUser.maxRank   ?? null;
+    const avatarUrl  = cfUser.titlePhoto ?? null;
+    const displayName = [cfUser.firstName, cfUser.lastName].filter(Boolean).join(" ") || handle;
 
-    // ── 2. Fetch submission history for heatmap ───────────────────────────────
-    const calRes = await fetchAllowed(
-      `${HADES_BASE}/codeforces/user/${encodeURIComponent(handle)}/calendar`
-    );
-
+    // ── Build heatmap + unique solved count from submissions ─────────────────
     const snapshots: { date: string; count: number }[] = [];
-    if (calRes.ok) {
-      const calJson = await calRes.json();
-      const submissions: any[] = calJson?.data?.result ?? [];
+    let problemsSolved = 0;
 
-      // Aggregate AC submissions per calendar date
-      const dateMap = new Map<string, number>();
-      for (const sub of submissions) {
-        if (sub.verdict === "OK" && sub.creationTimeSeconds) {
-          const date = new Date(sub.creationTimeSeconds * 1000)
-            .toISOString()
-            .split("T")[0];
-          dateMap.set(date, (dateMap.get(date) ?? 0) + 1);
+    if (subRes.ok) {
+      const subData = await subRes.json();
+      if (subData.status === "OK") {
+        const dateMap = new Map<string, number>();
+        const solvedSet = new Set<string>();
+        for (const sub of subData.result as any[]) {
+          if (sub.verdict === "OK") {
+            if (sub.creationTimeSeconds) {
+              const date = new Date(sub.creationTimeSeconds * 1000).toISOString().split("T")[0];
+              dateMap.set(date, (dateMap.get(date) ?? 0) + 1);
+            }
+            solvedSet.add(`${sub.problem.contestId}-${sub.problem.index}`);
+          }
         }
-      }
-      for (const [date, count] of Array.from(dateMap.entries())) {
-        snapshots.push({ date, count });
+        for (const [date, count] of Array.from(dateMap.entries())) snapshots.push({ date, count });
+        problemsSolved = solvedSet.size;
       }
     }
 
-    // ── 3. Fetch rating history for graph ────────────────────────────────────
+    // ── Rating history ────────────────────────────────────────────────────────
     let ratingHistory: any[] = [];
-    try {
-      const historyRes = await fetchAllowed(
-        `https://codeforces.com/api/user.rating?handle=${encodeURIComponent(handle)}`
-      );
-      if (historyRes.ok) {
-        const historyJson = await historyRes.json();
-        if (historyJson.status === "OK") {
-          ratingHistory = historyJson.result.map((h: any) => ({
-            contestName: h.contestName,
-            rating: h.newRating,
-            rank: h.rank,
-            contestDate: h.ratingUpdateTimeSeconds,
-          }));
-        }
+    if (histRes.ok) {
+      const histData = await histRes.json();
+      if (histData.status === "OK") {
+        ratingHistory = histData.result.map((h: any) => ({
+          contestName: h.contestName,
+          rating: h.newRating,
+          rank: h.rank,
+          contestDate: h.ratingUpdateTimeSeconds,
+        }));
       }
-    } catch (err) {
-      console.warn("[codeforces] Rating history fetch failed:", err);
     }
 
     await upsertSnapshots(clerkId, "codeforces", snapshots);
-
-    const statsPayload = {
-      handle,
-      rating,
-      rank,
-      problemsSolved: snapshots.reduce((sum, s) => sum + s.count, 0), // best approximation from submissions
-      displayName,
-      avatarUrl,
-      profileUrl: `https://codeforces.com/profile/${handle}`,
-    };
-
     await updatePlatformStats(clerkId, "codeforces", {
-      rating:       rating    ?? undefined,
-      rank:         rank      ?? undefined,
-      problemsSolved: statsPayload.problemsSolved,
+      rating: rating ?? undefined,
+      rank: rank ?? undefined,
+      problemsSolved,
       displayName,
-      avatarUrl:    avatarUrl ?? undefined,
-      profileUrl:   `https://codeforces.com/profile/${handle}`,
-      metadata: {
-        maxRating,
-        maxRank,
-        ratingHistory,
-      },
+      avatarUrl: avatarUrl ?? undefined,
+      profileUrl: `https://codeforces.com/profile/${handle}`,
+      metadata: { maxRating, maxRank, ratingHistory },
     });
 
-    const result = { ...statsPayload, snapshotCount: snapshots.length };
+    const result = { handle, rating, rank, problemsSolved, displayName, avatarUrl, snapshotCount: snapshots.length };
     await setCached(cacheKey, result);
     return NextResponse.json({ ...result, source: "api" });
+
   } catch (err) {
     console.error("[codeforces] Sync error:", err);
-    return NextResponse.json(
-      { error: "Failed to fetch Codeforces data. Check your handle." },
-      { status: 502 }
-    );
+    return NextResponse.json({ error: "Failed to fetch Codeforces data. Check your handle." }, { status: 502 });
   }
 }
