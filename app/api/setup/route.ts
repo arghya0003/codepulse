@@ -54,14 +54,18 @@ export async function GET(req: Request) {
       name: "drop friendships",
       query: `DROP TABLE IF EXISTS friendships CASCADE`,
     },
-    // Drop and recreate enums to stay in sync
+    // Drop and recreate enums to stay in sync (each must be a separate statement)
     {
-      name: "drop enums",
-      query: `
-        DROP TYPE IF EXISTS platform CASCADE;
-        DROP TYPE IF EXISTS friend_status CASCADE;
-        DROP TYPE IF EXISTS prediction_type CASCADE;
-      `,
+      name: "drop platform enum",
+      query: `DROP TYPE IF EXISTS platform CASCADE`,
+    },
+    {
+      name: "drop friend_status enum",
+      query: `DROP TYPE IF EXISTS friend_status CASCADE`,
+    },
+    {
+      name: "drop prediction_type enum",
+      query: `DROP TYPE IF EXISTS prediction_type CASCADE`,
     },
     {
       name: "create platform enum",
