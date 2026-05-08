@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Recurse -Path app -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(npx tsc *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\KIIT0001\\\\Desktop\\\\Codepulse\" -Recurse -Directory)",
+      "Bash(Select-Object -First 20)",
+      "Bash(Start-Sleep -Milliseconds 2000)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\KIIT0001\\\\Desktop\\\\Codepulse\" -Recurse -File)",
+      "Bash(grep -r \"peakTime\\\\|peak_time\\\\|peakDays\\\\|peak_days\" /c/Users/KIIT0001/Desktop/Codepulse --include=\"*.ts\" --include=\"*.tsx\" ! -path \"*/node_modules/*\" ! -path \"*/.claude/*\" ! -path \"*/.next/*\")",
+      "Bash(pip --version)",
+      "Bash(python -c \"import xgboost; import shap; import fastapi; import pandas; import numpy; print\\('all ok'\\)\")",
+      "Bash(python -c \"import xgboost; import fastapi; import pandas; import numpy; import sklearn; import joblib; import uvicorn; print\\('all ok'\\)\")",
+      "Bash(pip install *)",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import shap; print\\('shap', shap.__version__\\)\")",
+      "Bash(python -m pip install shap)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\KIIT0001\\\\Desktop\\\\Codepulse\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(Get-ChildItem -Path . -Name)",
+      "Bash(Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue)",
+      "Bash(Write-Host \"Done\")",
+      "WebFetch(domain:codolio.com)",
+      "WebSearch",
+      "Bash(dir venv\\\\Scripts\\\\uvicorn.exe)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 8001 -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 42992 -Force)",
+      "PowerShell(cd \"C:\\\\Users\\\\KIIT0001\\\\Desktop\\\\Codepulse\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -match \"analytics-client\" })",
+      "PowerShell(cd \"C:\\\\Users\\\\KIIT0001\\\\Desktop\\\\Codepulse\"; npx tsc --noEmit 2>&1 | Out-String | Select-String \"analytics-client\" -AllMatches | ForEach-Object { $_.Matches } | ForEach-Object { $_.Value })",
+      "Bash(Remove-Item -Path \"c:\\\\Users\\\\KIIT0001\\\\Desktop\\\\Codepulse\\\\app\\\\api\\\\platforms\\\\gfg\" -Recurse -Force)",
+      "Bash(Remove-Item -Path \"c:\\\\Users\\\\KIIT0001\\\\Desktop\\\\Codepulse\\\\app\\\\\\(dashboard\\)\\\\dashboard\\\\gfg\" -Recurse -Force)",
+      "Bash(Remove-Item -Path \"c:\\\\Users\\\\KIIT0001\\\\Desktop\\\\Codepulse\\\\scripts\\\\test-gfg.js\" -Force -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\KIIT0001\\\\Desktop\\\\Codepulse\" -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "Bash(grep -i \"console\\\\\\\\.error\\\\|console\\\\\\\\.warn\\\\|console\\\\\\\\.log\" \"c:\\\\Users\\\\KIIT0001\\\\Desktop\\\\Codepulse\\\\app\\\\api\\\\platforms\\\\leetcode\\\\route.ts\")",
+      "Bash(npm ls *)",
+      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(24\\).toString\\('hex'\\)\\)\")"
+    ]
+  }
+}

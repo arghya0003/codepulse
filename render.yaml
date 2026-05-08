@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: codepulse-ml
+    runtime: docker
+    dockerfilePath: ./ml/Dockerfile
+    dockerContext: ./ml
+    plan: free
+    envVars:
+      - key: ML_SERVICE_API_KEY
+        generateValue: true
