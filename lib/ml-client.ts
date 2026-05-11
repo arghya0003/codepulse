@@ -68,7 +68,7 @@ function getMlServiceUrl(): string {
  * Get API key for ML service. Returns null if not configured (key is optional).
  */
 function getMlApiKey(): string | null {
-  return process.env.ML_INTERNAL_TOKEN ?? null;
+  return process.env.ML_INTERNAL_TOKEN ?? process.env.ML_SERVICE_API_KEY ?? null;
 }
 
 function mlHeaders(extra?: Record<string, string>): Record<string, string> {
