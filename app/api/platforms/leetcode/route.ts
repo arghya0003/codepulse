@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
       if (contestData.contestRating) {
         contestRating = Math.round(contestData.contestRating);
       }
-      
+
       // Parse contest history native from LeetCode Alfa API instead of Codolio
       if (contestData.contestParticipation && Array.isArray(contestData.contestParticipation)) {
         ratingHistory = contestData.contestParticipation
@@ -102,7 +102,7 @@ export async function GET(req: NextRequest) {
             rating: Math.round(p.rating),
             rank: p.ranking
           }));
-          
+
         if (ratingHistory.length > 0) {
           maxRating = Math.max(...ratingHistory.map((r: any) => r.rating));
           maxRank = Math.min(...ratingHistory.map((r: any) => r.rank)).toString();
@@ -120,7 +120,7 @@ export async function GET(req: NextRequest) {
 
     if (statsRes.status === "fulfilled" && statsRes.value.ok) {
       const statsData = await statsRes.value.json();
-      
+
       // Alfa API returns errors for non-existent users
       if (statsData.errors) {
         throw new Error("User does not exist on LeetCode");

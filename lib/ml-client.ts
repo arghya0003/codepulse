@@ -65,14 +65,19 @@ function getMlServiceUrl(): string {
 }
 
 /**
- * Get API key for ML service
+ * Get API key for ML service. Returns null if not configured (key is optional).
  */
-function getMlApiKey(): string {
-  const key = process.env.ML_SERVICE_API_KEY;
-  if (!key) {
-    throw new Error("ML_SERVICE_API_KEY not configured");
-  }
-  return key;
+function getMlApiKey(): string | null {
+  return process.env.ML_INTERNAL_TOKEN ?? null;
+}
+
+function mlHeaders(extra?: Record<string, string>): Record<string, string> {
+  const key = getMlApiKey();
+  return {
+    "Content-Type": "application/json",
+    ...(key ? { "X-API-Key": key } : {}),
+    ...extra,
+  };
 }
 
 /**
@@ -95,10 +100,7 @@ export async function predictRating(
 
     const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": getMlApiKey(),
-      },
+      headers: mlHeaders(),
       body: JSON.stringify({
         problems_solved: problemsSolved,
         current_rating: currentRating,
@@ -140,10 +142,7 @@ export async function classifyDifficulty(
 
     const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": getMlApiKey(),
-      },
+      headers: mlHeaders(),
       body: JSON.stringify({
         acceptance_rate: acceptanceRate,
         submission_count: submissionCount,
@@ -183,10 +182,7 @@ export async function convertRating(
 
     const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": getMlApiKey(),
-      },
+      headers: mlHeaders(),
       body: JSON.stringify({
         rating,
         from_platform: fromPlatform,
@@ -240,10 +236,7 @@ export async function predictPeakTime(
     const url = new URL("/predict/peak_time", getMlServiceUrl());
     const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": getMlApiKey(),
-      },
+      headers: mlHeaders(),
       body: JSON.stringify({ submissions }),
       next: { revalidate: 0 },
     });

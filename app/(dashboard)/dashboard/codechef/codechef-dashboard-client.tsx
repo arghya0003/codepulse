@@ -109,7 +109,7 @@ export function CodeChefDashboardClient({
   const syncCodeChef = useCallback(async () => {
     setIsSyncing(true);
     try {
-      const res = await fetch("/api/platforms/codechef", { method: "GET" });
+      const res = await fetch("/api/platforms/codechef?force=true", { method: "GET" });
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Sync failed");

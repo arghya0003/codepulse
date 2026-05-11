@@ -15,11 +15,9 @@ const ALLOWED_HOSTS = new Set([
   "alfa-leetcode-api.onrender.com",   // community LeetCode API
   "api.codeforces.com",
   "codeforces.com",
-  "codechef-api.vercel.app",
   "www.codechef.com",
   "codechef.com",
   "api.codolio.com",
-  "hades.mani.works",   // unified CP API (Codeforces + CodeChef)
 ]);
 
 /**

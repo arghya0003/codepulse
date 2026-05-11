@@ -6,7 +6,8 @@ import { encrypt, decrypt } from "@/lib/encryption";
 import { eq, and } from "drizzle-orm";
 import type { platformEnum } from "@/db/schema";
 import type { InferSelectModel } from "drizzle-orm";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
+import { deleteCached, CACHE_KEYS } from "@/lib/redis";
 
 type Platform = (typeof platformEnum.enumValues)[number];
 type PlatformProfile = InferSelectModel<typeof platformProfiles>;
@@ -21,11 +22,11 @@ function stripToken(profile: PlatformProfile): SafeProfile {
 
 /**
  * Get the internal userId from a Clerk ID.
- * Ensures the user exists in our DB, creating them if necessary.
+ * Throws if the user doesn't exist — creation is handled by the Clerk webhook.
  */
 async function resolveUserId(clerkId: string): Promise<string> {
-  const user = await currentUser();
-  if (!user || user.id !== clerkId) throw new Error("Unauthorized");
+  const { userId } = await auth();
+  if (!userId || userId !== clerkId) throw new Error("Unauthorized");
 
   const [existing] = await db
     .select({ id: users.id })
@@ -35,15 +36,7 @@ async function resolveUserId(clerkId: string): Promise<string> {
 
   if (existing) return existing.id;
 
-  const [newUser] = await db
-    .insert(users)
-    .values({
-      clerkId,
-      email: user.emailAddresses[0].emailAddress,
-    })
-    .returning({ id: users.id });
-
-  return newUser.id;
+  throw new Error("User not found in database. Ensure the Clerk webhook is configured.");
 }
 
 /**
@@ -174,4 +167,26 @@ export async function updatePlatformStats(
     .returning();
 
   return updated ? stripToken(updated) : null;
+}
+
+/**
+ * Delete all platform data cache entries for the current user.
+ * Forces the next sync to fetch fresh data from upstream APIs.
+ */
+export async function clearUserPlatformCache(clerkId: string): Promise<void> {
+  const userId = await resolveUserId(clerkId);
+
+  const profiles = await db
+    .select({ platform: platformProfiles.platform, handle: platformProfiles.handle })
+    .from(platformProfiles)
+    .where(eq(platformProfiles.userId, userId));
+
+  const keys = profiles.map((p) =>
+    // GitHub cache uses clerkId as the handle segment; others use the actual handle
+    p.platform === "github"
+      ? CACHE_KEYS.platformData("github", clerkId)
+      : CACHE_KEYS.platformData(p.platform, p.handle)
+  );
+
+  await deleteCached(...keys);
 }

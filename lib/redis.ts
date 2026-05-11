@@ -89,3 +89,12 @@ export async function setCached<T>(
     // Cache write failure is non-fatal — app continues without cache
   }
 }
+
+export async function deleteCached(...keys: string[]): Promise<void> {
+  if (keys.length === 0) return;
+  try {
+    await redis.del(...keys);
+  } catch {
+    // Deletion failure is non-fatal
+  }
+}

@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
-import { Zap, TrendingUp, GitCommit, Trophy, Code2, Star, Flame, RefreshCw } from "lucide-react";
+import { Zap, TrendingUp, GitCommit, Trophy, Code2, Star, Flame, RefreshCw, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -88,6 +88,8 @@ const fadeUp = {
 export function DashboardClient({ user, clerkUser, platforms, snapshots, clerkId, dbError }: Props) {
   const [syncingPlatform, setSyncingPlatform] = useState<string | null>(null);
   const [isSyncingAll, setIsSyncingAll] = useState(false);
+  const [isClearingCache, setIsClearingCache] = useState(false);
+  const [syncErrors, setSyncErrors] = useState<Record<string, string>>({});
 
   const totalContributions = snapshots.reduce((sum, s) => sum + s.count, 0);
   const last30Days = snapshots.filter((s) => {
@@ -102,18 +104,37 @@ export function DashboardClient({ user, clerkUser, platforms, snapshots, clerkId
 
   const syncPlatform = useCallback(async (platform: string) => {
     setSyncingPlatform(platform);
+    setSyncErrors((prev) => { const next = { ...prev }; delete next[platform]; return next; });
     try {
-      await fetch(`/api/platforms/${platform}`, { method: "GET" });
-    } finally {
+      const res = await fetch(`/api/platforms/${platform}`, { method: "GET" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setSyncErrors((prev) => ({ ...prev, [platform]: body.error ?? `Sync failed (${res.status})` }));
+        setSyncingPlatform(null);
+        return;
+      }
+    } catch {
+      setSyncErrors((prev) => ({ ...prev, [platform]: "Network error — check your connection." }));
       setSyncingPlatform(null);
-      // Only reload on success to avoid clearing error states if we add them later
-      window.location.reload();
+      return;
+    }
+    setSyncingPlatform(null);
+    window.location.reload();
+  }, []);
+
+  const clearCache = useCallback(async () => {
+    setIsClearingCache(true);
+    try {
+      await fetch("/api/cache/clear", { method: "POST" });
+    } finally {
+      setIsClearingCache(false);
     }
   }, []);
 
   const syncAll = useCallback(async () => {
     setIsSyncingAll(true);
     try {
+      await fetch("/api/cache/clear", { method: "POST" });
       const res = await fetch("/api/sync", { method: "POST" });
       if (!res.ok) {
         const error = await res.json();
@@ -139,8 +160,9 @@ export function DashboardClient({ user, clerkUser, platforms, snapshots, clerkId
       color: meta.color,
       description: meta.description,
       status: (profile
-        ? syncingPlatform === platform ? "syncing" : "connected"
+        ? syncingPlatform === platform ? "syncing" : syncErrors[platform] ? "error" : "connected"
         : "not_connected") as PlatformCardProps["status"],
+      syncError: syncErrors[platform] ?? null,
       rating: profile?.rating,
       rank: profile?.rank,
       problemsSolved: profile?.problemsSolved,
@@ -193,7 +215,18 @@ export function DashboardClient({ user, clerkUser, platforms, snapshots, clerkId
             </p>
           </motion.div>
 
-          <motion.div variants={fadeUp}>
+          <motion.div variants={fadeUp} className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={clearCache}
+              disabled={isClearingCache || isSyncingAll || platforms.length === 0}
+              title="Clear cached data so next sync fetches fresh results"
+            >
+              <Trash2 className={`h-3.5 w-3.5 ${isClearingCache ? "animate-pulse" : ""}`} />
+              {isClearingCache ? "Clearing…" : "Clear cache"}
+            </Button>
             <Button
               id="sync-all"
               variant="outline"

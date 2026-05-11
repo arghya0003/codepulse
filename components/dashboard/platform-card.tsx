@@ -23,6 +23,7 @@ export type PlatformCardProps = {
   problemsSolved?: number | null;
   profileUrl?: string | null;
   lastSynced?: Date | null;
+  syncError?: string | null;
   onSync?: () => void;
   onLink?: () => void;
   onUnlink?: () => void;
@@ -48,6 +49,7 @@ export function PlatformCard({
   problemsSolved,
   profileUrl,
   lastSynced,
+  syncError,
   onSync,
   onLink,
   onUnlink,
@@ -117,6 +119,13 @@ export function PlatformCard({
                 />
               )}
             </div>
+          )}
+
+          {/* Sync error */}
+          {syncError && (
+            <p className="text-xs text-destructive bg-destructive/10 rounded-md px-2 py-1.5 leading-snug">
+              {syncError}
+            </p>
           )}
 
           {/* Actions */}

@@ -35,6 +35,11 @@ export default async function AnalyticsPage() {
       .filter((s) => s.count > 0)
       .map((s) => ({ date: s.date, count: s.count }));
     mlPeakTime = await predictPeakTime(submissions);
+    if (!mlPeakTime) {
+      console.warn("[analytics] ML service returned null. Check ML_SERVICE_URL and ML_INTERNAL_TOKEN.");
+    }
+  } else if (!process.env.ML_SERVICE_URL) {
+    console.warn("[analytics] ML_SERVICE_URL not set — ML sections will be hidden.");
   }
 
   return (
