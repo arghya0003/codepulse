@@ -244,10 +244,17 @@ export async function predictPeakTime(
       signal: controller.signal,
     });
     clearTimeout(timeout);
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.error(`[ML] predictPeakTime failed: HTTP ${response.status} ${response.statusText}`);
+      return null;
+    }
     const json = await response.json() as { success: boolean; data?: MlPeakTimeData };
+    if (!json.success || !json.data) {
+      console.error("[ML] predictPeakTime bad response:", JSON.stringify(json).slice(0, 200));
+    }
     return json.success && json.data ? json.data : null;
-  } catch {
+  } catch (err) {
+    console.error("[ML] predictPeakTime error:", err instanceof Error ? err.message : err);
     return null;
   }
 }
