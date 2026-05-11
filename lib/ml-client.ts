@@ -234,16 +234,12 @@ export async function predictPeakTime(
 ): Promise<MlPeakTimeData | null> {
   try {
     const url = new URL("/predict/peak_time", getMlServiceUrl());
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
     const response = await fetch(url, {
       method: "POST",
       headers: mlHeaders(),
       body: JSON.stringify({ submissions }),
-      next: { revalidate: 0 },
-      signal: controller.signal,
+      cache: "no-store",
     });
-    clearTimeout(timeout);
     if (!response.ok) {
       console.error(`[ML] predictPeakTime failed: HTTP ${response.status} ${response.statusText}`);
       return null;
