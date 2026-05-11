@@ -2,7 +2,7 @@
 
 A unified competitive programming dashboard that aggregates your activity across GitHub, LeetCode, Codeforces, and CodeChef — with ML-powered insights on when you code best.
 
-**Live:** [codepulse-snowy.vercel.app](https://codepulse-snowy.vercel.app)
+**Live:** [codepulse-gules.vercel.app](https://codepulse-gules.vercel.app)
 
 ---
 
