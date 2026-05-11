@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
     const ratingHistory: { contestName: string; rating: number; contestDate: number; rank: number }[] = [];
     if (ratingHistoryMatch) {
       try {
-        const raw: { name: string; rating: string; rank: string; end_date: string }[] = JSON.parse(ratingHistoryMatch[1]);
+        const raw: { name: string; code: string; rating: string; rank: string; end_date: string }[] = JSON.parse(ratingHistoryMatch[1]);
         for (const entry of raw) {
           if (entry.rating && entry.end_date) {
             ratingHistory.push({
