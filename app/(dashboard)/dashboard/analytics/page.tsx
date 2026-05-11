@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getUserPlatforms } from "@/actions/platforms";
 import { getAllPlatformSnapshots } from "@/actions/contributions";
-import { predictPeakTime, type MlPeakTimeData } from "@/lib/ml-client";
 import { AnalyticsClient } from "./analytics-client";
 
 export const metadata: Metadata = {
@@ -29,25 +28,11 @@ export default async function AnalyticsPage() {
     dbError = err instanceof Error ? err.message : "Database unavailable";
   }
 
-  let mlPeakTime: MlPeakTimeData | null = null;
-  if (snapshots.length > 0 && process.env.ML_SERVICE_URL) {
-    const submissions = snapshots
-      .filter((s) => s.count > 0)
-      .map((s) => ({ date: s.date, count: s.count }));
-    mlPeakTime = await predictPeakTime(submissions);
-    if (!mlPeakTime) {
-      console.warn("[analytics] ML service returned null. Check ML_SERVICE_URL and ML_INTERNAL_TOKEN.");
-    }
-  } else if (!process.env.ML_SERVICE_URL) {
-    console.warn("[analytics] ML_SERVICE_URL not set — ML sections will be hidden.");
-  }
-
   return (
     <AnalyticsClient
       platforms={platforms}
       snapshots={snapshots}
       dbError={dbError}
-      mlPeakTime={mlPeakTime}
     />
   );
 }

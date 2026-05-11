@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import {
@@ -155,10 +155,9 @@ type Platform = {
 };
 
 type Props = {
-  platforms:   Platform[];
-  snapshots:   Snapshot[];
-  dbError:     string | null;
-  mlPeakTime?: MlPeakTimeData | null;
+  platforms: Platform[];
+  snapshots: Snapshot[];
+  dbError:   string | null;
 };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -290,7 +289,19 @@ function FactorRow({ label, delta, sub }: { label: string; delta: number; sub?: 
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function AnalyticsClient({ platforms, snapshots, dbError, mlPeakTime = null }: Props) {
+export function AnalyticsClient({ platforms, snapshots, dbError }: Props) {
+  const [mlPeakTime, setMlPeakTime] = useState<MlPeakTimeData | null>(null);
+  const [mlLoading, setMlLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/ml/peak-time")
+      .then((r) => r.ok ? r.json() : null)
+      .then((json) => { if (!cancelled) setMlPeakTime(json?.data ?? null); })
+      .catch(() => { if (!cancelled) setMlPeakTime(null); })
+      .finally(() => { if (!cancelled) setMlLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   // ── Core stats ──────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
@@ -1133,6 +1144,14 @@ export function AnalyticsClient({ platforms, snapshots, dbError, mlPeakTime = nu
 
 
             {/* ② Activity Forecast — momentum + consistency + 7-day outlook */}
+            {mlLoading && (
+              <motion.div variants={fadeUp}>
+                <Card className="border-border/50 bg-card/50">
+                  <CardHeader><CardTitle className="text-sm font-medium flex items-center gap-2"><Brain className="w-4 h-4 text-violet-400" />Loading AI Insights…</CardTitle></CardHeader>
+                  <CardContent className="space-y-3"><Skeleton className="h-32 w-full rounded-lg" /><Skeleton className="h-6 w-2/3 rounded" /></CardContent>
+                </Card>
+              </motion.div>
+            )}
             {mlPeakTime && (
               <motion.div variants={fadeUp}>
                 <Card className="border-border/50 bg-card/50 relative overflow-hidden">
