@@ -165,8 +165,6 @@ export function Navbar() {
 
                 {/* Right actions */}
                 <div className="flex items-center gap-2 shrink-0 ml-auto md:ml-0">
-                  <ThemeToggle className="hidden sm:flex" />
-
                   {isLoaded && !isSignedIn && (
                     <Link href="/sign-up">
                       <motion.span

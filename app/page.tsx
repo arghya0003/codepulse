@@ -332,7 +332,7 @@ const TESTIMONIALS = [
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   return (
-    <>
+    <div className="dark">
       <Navbar />
       <div className="relative min-h-screen overflow-x-hidden" style={{ background: "#06060f" }}>
 
@@ -643,6 +643,6 @@ export default function LandingPage() {
         </footer>
 
       </div>
-    </>
+    </div>
   );
 }
