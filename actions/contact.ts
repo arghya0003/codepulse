@@ -9,7 +9,7 @@ import { contactSchema, type ContactInput } from "@/lib/contact-schema";
 export async function submitContact(input: ContactInput): Promise<{ success: boolean; error?: string }> {
   const parsed = contactSchema.safeParse(input);
   if (!parsed.success) {
-    return { success: false, error: parsed.error.errors[0].message };
+    return { success: false, error: parsed.error.issues[0].message };
   }
 
   const { name, email, role, type, message } = parsed.data;
