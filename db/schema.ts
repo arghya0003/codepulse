@@ -7,6 +7,7 @@ import {
   pgEnum,
   jsonb,
   date,
+  boolean,
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
@@ -30,6 +31,13 @@ export const predictionTypeEnum = pgEnum("prediction_type", [
   "peak_hours",
   "anomaly",
   "forecast",
+]);
+
+export const contactTypeEnum = pgEnum("contact_type", [
+  "feedback",
+  "bug",
+  "experience",
+  "flaw",
 ]);
 
 // ── Users ─────────────────────────────────────────────────────────────────────
@@ -149,6 +157,18 @@ export const mlPredictions = pgTable(
     ),
   })
 );
+
+// ── Contact Submissions ───────────────────────────────────────────────────────
+export const contactSubmissions = pgTable("contact_submissions", {
+  id:        uuid("id").defaultRandom().primaryKey(),
+  name:      text("name").notNull(),
+  email:     text("email").notNull(),
+  type:      contactTypeEnum("type").notNull(),
+  role:      text("role"),        // optional — shown in testimonials
+  message:   text("message").notNull(),
+  approved:  boolean("approved").default(false).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
 
 // ── Relations ─────────────────────────────────────────────────────────────────
 export const usersRelations = relations(users, ({ many }) => ({

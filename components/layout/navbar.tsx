@@ -9,8 +9,9 @@ import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 
 const LANDING_LINKS = [
-  { href: "#features",     label: "Features"     },
-  { href: "#testimonials", label: "Testimonials" },
+  { href: "#features",     label: "Features",     external: false },
+  { href: "#testimonials", label: "Testimonials", external: false },
+  { href: "/contact",      label: "Contact",      external: false },
 ];
 
 const BORDER_IDLE     = "linear-gradient(135deg, rgba(124,58,237,0.25) 0%, rgba(255,255,255,0.05) 45%, rgba(37,99,235,0.2) 100%)";
@@ -140,27 +141,31 @@ export function Navbar() {
 
                 {/* Center nav */}
                 <nav className="hidden md:flex flex-1 justify-center items-center gap-0.5">
-                  {LANDING_LINKS.map((l) => (
-                    <a
-                      key={l.href}
-                      href={l.href}
-                      onMouseEnter={() => setHovered(l.href)}
-                      onMouseLeave={() => setHovered(null)}
-                      className="relative px-4 py-[7px] text-sm rounded-xl transition-colors duration-150 select-none"
-                      style={{ color: hovered === l.href ? textActive : textMuted }}
-                    >
-                      {hovered === l.href && (
-                        <motion.span
-                          layoutId="nav-bg"
-                          className="absolute inset-0 rounded-xl"
-                          style={{ background: hoverBg }}
-                          initial={false}
-                          transition={{ type: "spring", stiffness: 500, damping: 36 }}
-                        />
-                      )}
-                      <span className="relative z-10">{l.label}</span>
-                    </a>
-                  ))}
+                  {LANDING_LINKS.map((l) => {
+                    const isPage = l.href.startsWith("/");
+                    const Comp = isPage ? Link : "a";
+                    return (
+                      <Comp
+                        key={l.href}
+                        href={l.href}
+                        onMouseEnter={() => setHovered(l.href)}
+                        onMouseLeave={() => setHovered(null)}
+                        className="relative px-4 py-[7px] text-sm rounded-xl transition-colors duration-150 select-none"
+                        style={{ color: hovered === l.href ? textActive : textMuted }}
+                      >
+                        {hovered === l.href && (
+                          <motion.span
+                            layoutId="nav-bg"
+                            className="absolute inset-0 rounded-xl"
+                            style={{ background: hoverBg }}
+                            initial={false}
+                            transition={{ type: "spring", stiffness: 500, damping: 36 }}
+                          />
+                        )}
+                        <span className="relative z-10">{l.label}</span>
+                      </Comp>
+                    );
+                  })}
                 </nav>
 
                 {/* Right actions */}
@@ -236,17 +241,21 @@ export function Navbar() {
                     style={{ borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)"}` }}
                   >
                     <div className="px-4 py-3 flex flex-col gap-1">
-                      {LANDING_LINKS.map((l) => (
-                        <a
-                          key={l.href}
-                          href={l.href}
-                          onClick={() => setMobileOpen(false)}
-                          className="px-3 py-2.5 rounded-xl text-sm transition-colors duration-150"
-                          style={{ color: textMuted }}
-                        >
-                          {l.label}
-                        </a>
-                      ))}
+                      {LANDING_LINKS.map((l) => {
+                        const isPage = l.href.startsWith("/");
+                        const Comp = isPage ? Link : "a";
+                        return (
+                          <Comp
+                            key={l.href}
+                            href={l.href}
+                            onClick={() => setMobileOpen(false)}
+                            className="px-3 py-2.5 rounded-xl text-sm transition-colors duration-150"
+                            style={{ color: textMuted }}
+                          >
+                            {l.label}
+                          </Comp>
+                        );
+                      })}
                       {isLoaded && !isSignedIn && (
                         <>
                           <SignInButton mode="modal">

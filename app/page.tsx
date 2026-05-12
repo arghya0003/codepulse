@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/navbar";
 import {
@@ -314,7 +314,9 @@ const FEATURES = [
 ];
 
 // ── Testimonials ───────────────────────────────────────────────────────────────
-const TESTIMONIALS = [
+const AVATAR_COLORS = ["#a78bfa", "#60a5fa", "#4ade80", "#fb923c", "#f87171", "#38bdf8", "#e879f9"];
+
+const STATIC_TESTIMONIALS = [
   {
     quote: "Finally one place for my LeetCode streak and GitHub commits. The peak time prediction is scarily accurate — it knew I code best at 10pm before I did.",
     name: "Aryan Mehta", role: "SDE-2 @ Flipkart", color: "#a78bfa",
@@ -331,6 +333,27 @@ const TESTIMONIALS = [
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
+  const [dynamicTestimonials, setDynamicTestimonials] = useState<
+    Array<{ id: string; name: string; role: string | null; message: string }>
+  >([]);
+
+  useEffect(() => {
+    fetch("/api/testimonials")
+      .then((r) => r.ok ? r.json() : { data: [] })
+      .then((json) => setDynamicTestimonials(json.data ?? []))
+      .catch(() => {});
+  }, []);
+
+  const allTestimonials = [
+    ...STATIC_TESTIMONIALS,
+    ...dynamicTestimonials.map((t, i) => ({
+      quote: t.message,
+      name:  t.name,
+      role:  t.role ?? "CodePulse User",
+      color: AVATAR_COLORS[(STATIC_TESTIMONIALS.length + i) % AVATAR_COLORS.length],
+    })),
+  ];
+
   return (
     <div className="dark">
       <Navbar />
@@ -541,7 +564,7 @@ export default function LandingPage() {
             </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {TESTIMONIALS.map((t, i) => (
+              {allTestimonials.map((t, i) => (
                 <motion.div
                   key={i}
                   variants={fadeUp}
