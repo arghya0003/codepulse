@@ -6,7 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/navbar";
-import { contactSchema, submitContact, type ContactInput } from "@/actions/contact";
+import { contactSchema, type ContactInput } from "@/lib/contact-schema";
+import { submitContact } from "@/actions/contact";
 import { Code2, Mail, Bug, Star, MessageSquare, AlertTriangle, CheckCircle2, ArrowLeft } from "lucide-react";
 
 const TYPES = [
