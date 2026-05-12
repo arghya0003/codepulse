@@ -13,18 +13,47 @@ const LANDING_LINKS = [
   { href: "#testimonials", label: "Testimonials" },
 ];
 
-// ── Pill border gradient ───────────────────────────────────────────────────────
-const BORDER_IDLE    = "linear-gradient(135deg, rgba(124,58,237,0.25) 0%, rgba(255,255,255,0.05) 45%, rgba(37,99,235,0.2) 100%)";
-const BORDER_SCROLLED= "linear-gradient(135deg, rgba(124,58,237,0.55) 0%, rgba(255,255,255,0.10) 45%, rgba(37,99,235,0.45) 100%)";
+const BORDER_IDLE     = "linear-gradient(135deg, rgba(124,58,237,0.25) 0%, rgba(255,255,255,0.05) 45%, rgba(37,99,235,0.2) 100%)";
+const BORDER_SCROLLED = "linear-gradient(135deg, rgba(124,58,237,0.55) 0%, rgba(255,255,255,0.10) 45%, rgba(37,99,235,0.45) 100%)";
+
+function ThemeToggle({ className }: { className?: string }) {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  return (
+    <motion.button
+      whileHover={{ scale: 1.08 }}
+      whileTap={{ scale: 0.92 }}
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+      aria-label="Toggle theme"
+      className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-150 ${className ?? ""}`}
+      style={{
+        background: resolvedTheme === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
+        border: resolvedTheme === "dark" ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(0,0,0,0.10)",
+        color: resolvedTheme === "dark" ? "rgba(148,163,184,1)" : "rgba(71,85,105,1)",
+      }}
+    >
+      {mounted
+        ? resolvedTheme === "dark"
+          ? <Sun className="h-3.5 w-3.5" />
+          : <Moon className="h-3.5 w-3.5" />
+        : <Moon className="h-3.5 w-3.5" />}
+    </motion.button>
+  );
+}
 
 export function Navbar() {
   const pathname  = usePathname();
   const isLanding = pathname === "/";
   const { isSignedIn, isLoaded } = useAuth();
+  const { resolvedTheme } = useTheme();
+  const [mounted,    setMounted]    = useState(false);
   const [scrolled,   setScrolled]   = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hovered,    setHovered]    = useState<string | null>(null);
-  const { theme, setTheme } = useTheme();
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 24);
@@ -32,8 +61,18 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", h);
   }, []);
 
+  const isDark = !mounted || resolvedTheme === "dark";
+
   // ── Landing — floating pill ──────────────────────────────────────────────────
   if (isLanding) {
+    const pillBg = isDark
+      ? scrolled ? "rgba(5,5,14,0.96)"    : "rgba(5,5,14,0.52)"
+      : scrolled ? "rgba(255,255,255,0.97)" : "rgba(255,255,255,0.80)";
+
+    const textMuted  = isDark ? "rgba(148,163,184,1)" : "rgba(71,85,105,1)";
+    const textActive = isDark ? "rgba(255,255,255,0.92)" : "rgba(15,23,42,1)";
+    const hoverBg    = isDark ? "rgba(255,255,255,0.065)" : "rgba(0,0,0,0.05)";
+
     return (
       <motion.div
         initial={{ y: -18, opacity: 0 }}
@@ -41,16 +80,15 @@ export function Navbar() {
         transition={{ duration: 0.6, ease: [0.19, 1, 0.22, 1] }}
         className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-4"
       >
-        {/* Drop-shadow wrapper — only when scrolled */}
         <div
           className="w-full max-w-[860px] transition-all duration-500"
           style={{
             filter: scrolled
-              ? "drop-shadow(0 20px 56px rgba(0,0,0,0.65)) drop-shadow(0 4px 16px rgba(124,58,237,0.12))"
+              ? "drop-shadow(0 20px 56px rgba(0,0,0,0.35)) drop-shadow(0 4px 16px rgba(124,58,237,0.12))"
               : "none",
           }}
         >
-          {/* Gradient border (p-[1px] trick) */}
+          {/* Gradient border */}
           <div
             className="rounded-[18px] p-[1px] transition-all duration-500"
             style={{ background: scrolled ? BORDER_SCROLLED : BORDER_IDLE }}
@@ -59,15 +97,15 @@ export function Navbar() {
             <div
               className="rounded-[17px] backdrop-blur-[20px] overflow-hidden transition-all duration-500"
               style={{
-                background: scrolled ? "rgba(5,5,14,0.96)" : "rgba(5,5,14,0.52)",
-                // Inner top highlight — the "glass lit from above" effect
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -1px 0 rgba(0,0,0,0.2)",
+                background: pillBg,
+                boxShadow: isDark
+                  ? "inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -1px 0 rgba(0,0,0,0.2)"
+                  : "inset 0 1px 0 rgba(255,255,255,0.9),  inset 0 -1px 0 rgba(0,0,0,0.04)",
               }}
             >
-              {/* Main bar */}
               <div className="flex h-[54px] items-center px-4 gap-2">
 
-                {/* ── Logo ── */}
+                {/* Logo */}
                 <Link href="/" className="flex items-center gap-2.5 shrink-0 group mr-1">
                   <motion.div
                     whileHover={{ scale: 1.07, rotate: 4 }}
@@ -80,24 +118,27 @@ export function Navbar() {
                     }}
                   >
                     <Code2 className="h-[14px] w-[14px] text-white" />
-                    {/* Live dot */}
                     <span className="absolute -top-[3px] -right-[3px] flex h-[9px] w-[9px]">
                       <span className="animate-ping absolute h-full w-full rounded-full bg-cyan-400 opacity-60" />
                       <span className="h-[9px] w-[9px] rounded-full bg-cyan-400 border-[1.5px] border-[#050510]" />
                     </span>
                   </motion.div>
-                  <span className="text-[15px] font-bold text-white tracking-[-0.01em]">CodePulse</span>
-                  <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-semibold tracking-wide uppercase border"
+                  <span className="text-[15px] font-bold tracking-[-0.01em]" style={{ color: textActive }}>
+                    CodePulse
+                  </span>
+                  <span
+                    className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-semibold tracking-wide uppercase border"
                     style={{
                       color: "rgba(167,139,250,0.9)",
                       borderColor: "rgba(124,58,237,0.3)",
                       background: "rgba(124,58,237,0.08)",
-                    }}>
+                    }}
+                  >
                     Beta
                   </span>
                 </Link>
 
-                {/* ── Center nav — flex-1 so it naturally centers ── */}
+                {/* Center nav */}
                 <nav className="hidden md:flex flex-1 justify-center items-center gap-0.5">
                   {LANDING_LINKS.map((l) => (
                     <a
@@ -106,16 +147,13 @@ export function Navbar() {
                       onMouseEnter={() => setHovered(l.href)}
                       onMouseLeave={() => setHovered(null)}
                       className="relative px-4 py-[7px] text-sm rounded-xl transition-colors duration-150 select-none"
-                      style={{
-                        color: hovered === l.href ? "rgba(255,255,255,0.92)" : "rgba(148,163,184,1)",
-                      }}
+                      style={{ color: hovered === l.href ? textActive : textMuted }}
                     >
-                      {/* Sliding background pill (shared layout) */}
                       {hovered === l.href && (
                         <motion.span
                           layoutId="nav-bg"
                           className="absolute inset-0 rounded-xl"
-                          style={{ background: "rgba(255,255,255,0.065)" }}
+                          style={{ background: hoverBg }}
                           initial={false}
                           transition={{ type: "spring", stiffness: 500, damping: 36 }}
                         />
@@ -125,34 +163,19 @@ export function Navbar() {
                   ))}
                 </nav>
 
-                {/* ── Right actions ── */}
+                {/* Right actions */}
                 <div className="flex items-center gap-2 shrink-0 ml-auto md:ml-0">
-
-                  {/* Theme toggle */}
-                  <motion.button
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.92 }}
-                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                    className="hidden sm:flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-150"
-                    style={{
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      color: "rgba(148,163,184,1)",
-                    }}
-                  >
-                    {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-                  </motion.button>
+                  <ThemeToggle className="hidden sm:flex" />
 
                   {isLoaded && !isSignedIn && (
                     <Link href="/sign-up">
                       <motion.span
-                        whileHover={{ scale: 1.04, backgroundColor: "#2563eb" }}
+                        whileHover={{ scale: 1.04 }}
                         whileTap={{ scale: 0.96 }}
-                        className="inline-flex items-center gap-1.5 px-5 py-[7px] rounded-full text-sm font-semibold text-white cursor-pointer transition-colors duration-150"
+                        className="inline-flex items-center gap-1.5 px-5 py-[7px] rounded-full text-sm font-semibold text-white cursor-pointer"
                         style={{ background: "#3b82f6" }}
                       >
-                        Join
-                        <ArrowRight className="h-3.5 w-3.5" />
+                        Join <ArrowRight className="h-3.5 w-3.5" />
                       </motion.span>
                     </Link>
                   )}
@@ -163,11 +186,8 @@ export function Navbar() {
                         <motion.span
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.97 }}
-                          className="hidden sm:inline-flex items-center gap-1.5 px-4 py-[7px] rounded-full text-sm font-medium cursor-pointer transition-colors duration-150"
-                          style={{
-                            background: "#3b82f6",
-                            color: "rgba(255,255,255,1)",
-                          }}
+                          className="hidden sm:inline-flex items-center gap-1.5 px-4 py-[7px] rounded-full text-sm font-medium cursor-pointer text-white"
+                          style={{ background: "#3b82f6" }}
                         >
                           <LayoutDashboard className="h-3.5 w-3.5" />
                           Dashboard
@@ -188,7 +208,7 @@ export function Navbar() {
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setMobileOpen((v) => !v)}
                     className="md:hidden p-2 rounded-full transition-colors duration-150"
-                    style={{ color: "rgba(100,116,139,1)" }}
+                    style={{ color: textMuted }}
                   >
                     <AnimatePresence mode="wait" initial={false}>
                       <motion.span
@@ -206,7 +226,7 @@ export function Navbar() {
                 </div>
               </div>
 
-              {/* ── Mobile menu ── */}
+              {/* Mobile menu */}
               <AnimatePresence>
                 {mobileOpen && (
                   <motion.div
@@ -215,7 +235,7 @@ export function Navbar() {
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.2, ease: [0.19, 1, 0.22, 1] }}
                     className="overflow-hidden"
-                    style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                    style={{ borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)"}` }}
                   >
                     <div className="px-4 py-3 flex flex-col gap-1">
                       {LANDING_LINKS.map((l) => (
@@ -224,7 +244,7 @@ export function Navbar() {
                           href={l.href}
                           onClick={() => setMobileOpen(false)}
                           className="px-3 py-2.5 rounded-xl text-sm transition-colors duration-150"
-                          style={{ color: "rgba(148,163,184,1)" }}
+                          style={{ color: textMuted }}
                         >
                           {l.label}
                         </a>
@@ -234,16 +254,16 @@ export function Navbar() {
                           <SignInButton mode="modal">
                             <button
                               onClick={() => setMobileOpen(false)}
-                              className="mt-1 px-3 py-2.5 rounded-xl text-sm text-left cursor-pointer transition-colors duration-150"
-                              style={{ color: "rgba(148,163,184,1)" }}
+                              className="mt-1 px-3 py-2.5 rounded-xl text-sm text-left cursor-pointer"
+                              style={{ color: textMuted }}
                             >
                               Sign in
                             </button>
                           </SignInButton>
                           <Link href="/sign-up" onClick={() => setMobileOpen(false)}>
-                            <span className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer"
-                              style={{ background: "linear-gradient(135deg, #7c3aed, #2563eb)" }}>
-                              Get started <ArrowRight className="h-3.5 w-3.5" />
+                            <span className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full text-sm font-semibold text-white cursor-pointer"
+                              style={{ background: "#3b82f6" }}>
+                              Join <ArrowRight className="h-3.5 w-3.5" />
                             </span>
                           </Link>
                         </>
@@ -251,7 +271,7 @@ export function Navbar() {
                       {isSignedIn && (
                         <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
                           <span className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm cursor-pointer"
-                            style={{ color: "rgba(148,163,184,1)" }}>
+                            style={{ color: textMuted }}>
                             <LayoutDashboard className="h-3.5 w-3.5" />
                             Dashboard
                           </span>
@@ -274,12 +294,7 @@ export function Navbar() {
       initial={{ y: -12, opacity: 0 }}
       animate={{ y: 0,   opacity: 1 }}
       transition={{ duration: 0.4, ease: [0.19, 1, 0.22, 1] }}
-      className="fixed top-0 left-0 right-0 z-50 h-16 backdrop-blur-[18px]"
-      style={{
-        background: "rgba(5,5,14,0.9)",
-        borderBottom: "1px solid rgba(255,255,255,0.05)",
-        boxShadow: "0 1px 0 rgba(255,255,255,0.025), 0 4px 24px rgba(0,0,0,0.3)",
-      }}
+      className="fixed top-0 left-0 right-0 z-50 h-16 backdrop-blur-[18px] bg-background/90 border-b border-border"
     >
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
@@ -293,26 +308,26 @@ export function Navbar() {
             <Code2 className="h-[14px] w-[14px] text-white" />
             <span className="absolute -top-[3px] -right-[3px] flex h-[9px] w-[9px]">
               <span className="animate-ping absolute h-full w-full rounded-full bg-cyan-400 opacity-60" />
-              <span className="h-[9px] w-[9px] rounded-full bg-cyan-400 border-[1.5px] border-[#050510]" />
+              <span className="h-[9px] w-[9px] rounded-full bg-cyan-400 border-[1.5px] border-background" />
             </span>
           </div>
-          <span className="text-[15px] font-bold text-white tracking-[-0.01em]">CodePulse</span>
+          <span className="text-[15px] font-bold text-foreground tracking-[-0.01em]">CodePulse</span>
         </Link>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           {isSignedIn && (
             <UserButton
               appearance={{
                 elements: {
-                  avatarBox: "h-8 w-8 ring-1 ring-white/15 ring-offset-2 ring-offset-[#050510]",
+                  avatarBox: "h-8 w-8 ring-1 ring-border ring-offset-2 ring-offset-background",
                 },
               }}
             />
           )}
           {isLoaded && !isSignedIn && (
             <SignInButton mode="modal">
-              <button className="px-4 py-2 rounded-xl text-sm transition-colors duration-150 cursor-pointer"
-                style={{ color: "rgba(148,163,184,1)" }}>
+              <button className="px-4 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors duration-150 cursor-pointer">
                 Sign in
               </button>
             </SignInButton>
