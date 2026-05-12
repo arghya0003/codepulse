@@ -19,7 +19,8 @@ export async function submitContact(input: ContactInput): Promise<{ success: boo
 
   try {
     await db.insert(contactSubmissions).values({ name, email, role: role || null, type, message, approved });
-  } catch {
+  } catch (err) {
+    console.error("[contact] DB insert failed:", err);
     return { success: false, error: "Failed to save your message. Please try again." };
   }
 
