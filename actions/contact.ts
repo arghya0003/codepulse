@@ -6,8 +6,6 @@ import { eq } from "drizzle-orm";
 import { Resend } from "resend";
 import { contactSchema, type ContactInput } from "@/lib/contact-schema";
 
-export { contactSchema, type ContactInput };
-
 export async function submitContact(input: ContactInput): Promise<{ success: boolean; error?: string }> {
   const parsed = contactSchema.safeParse(input);
   if (!parsed.success) {
