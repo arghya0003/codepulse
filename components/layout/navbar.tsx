@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
-import { Code2, ArrowRight, Menu, X, LayoutDashboard, Moon } from "lucide-react";
+import { Code2, ArrowRight, Menu, X, LayoutDashboard, Moon, Sun } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 
 const LANDING_LINKS = [
   { href: "#features",     label: "Features"     },
@@ -23,6 +24,7 @@ export function Navbar() {
   const [scrolled,   setScrolled]   = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hovered,    setHovered]    = useState<string | null>(null);
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 24);
@@ -126,10 +128,11 @@ export function Navbar() {
                 {/* ── Right actions ── */}
                 <div className="flex items-center gap-2 shrink-0 ml-auto md:ml-0">
 
-                  {/* Moon icon button */}
+                  {/* Theme toggle */}
                   <motion.button
                     whileHover={{ scale: 1.08 }}
                     whileTap={{ scale: 0.92 }}
+                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                     className="hidden sm:flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-150"
                     style={{
                       background: "rgba(255,255,255,0.06)",
@@ -137,7 +140,7 @@ export function Navbar() {
                       color: "rgba(148,163,184,1)",
                     }}
                   >
-                    <Moon className="h-3.5 w-3.5" />
+                    {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
                   </motion.button>
 
                   {isLoaded && !isSignedIn && (
