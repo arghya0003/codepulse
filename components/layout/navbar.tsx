@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
-import { Code2, ArrowRight, Menu, X, LayoutDashboard } from "lucide-react";
+import { Code2, ArrowRight, Menu, X, LayoutDashboard, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const LANDING_LINKS = [
@@ -95,10 +95,6 @@ export function Navbar() {
                   </span>
                 </Link>
 
-                {/* ── Left separator ── */}
-                <div className="hidden md:block h-5 w-px mx-2 shrink-0"
-                  style={{ background: "rgba(255,255,255,0.07)" }} />
-
                 {/* ── Center nav — flex-1 so it naturally centers ── */}
                 <nav className="hidden md:flex flex-1 justify-center items-center gap-0.5">
                   {LANDING_LINKS.map((l) => (
@@ -127,42 +123,35 @@ export function Navbar() {
                   ))}
                 </nav>
 
-                {/* ── Right separator ── */}
-                <div className="hidden md:block h-5 w-px mx-2 shrink-0"
-                  style={{ background: "rgba(255,255,255,0.07)" }} />
-
                 {/* ── Right actions ── */}
-                <div className="flex items-center gap-1.5 shrink-0 ml-auto md:ml-0">
-                  {isLoaded && !isSignedIn && (
-                    <>
-                      <SignInButton mode="modal">
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.97 }}
-                          className="hidden sm:block px-4 py-[7px] rounded-xl text-sm cursor-pointer transition-colors duration-150"
-                          style={{ color: "rgba(148,163,184,1)" }}
-                          onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.9)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(148,163,184,1)")}
-                        >
-                          Sign in
-                        </motion.button>
-                      </SignInButton>
+                <div className="flex items-center gap-2 shrink-0 ml-auto md:ml-0">
 
-                      <Link href="/sign-up">
-                        <motion.span
-                          whileHover={{ scale: 1.03 }}
-                          whileTap={{ scale: 0.96 }}
-                          className="inline-flex items-center gap-1.5 px-4 py-[7px] rounded-xl text-sm font-semibold text-white cursor-pointer"
-                          style={{
-                            background: "linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)",
-                            boxShadow: "0 0 22px rgba(124,58,237,0.3), inset 0 1px 0 rgba(255,255,255,0.15)",
-                          }}
-                        >
-                          Get started
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </motion.span>
-                      </Link>
-                    </>
+                  {/* Moon icon button */}
+                  <motion.button
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.92 }}
+                    className="hidden sm:flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-150"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      color: "rgba(148,163,184,1)",
+                    }}
+                  >
+                    <Moon className="h-3.5 w-3.5" />
+                  </motion.button>
+
+                  {isLoaded && !isSignedIn && (
+                    <Link href="/sign-up">
+                      <motion.span
+                        whileHover={{ scale: 1.04, backgroundColor: "#2563eb" }}
+                        whileTap={{ scale: 0.96 }}
+                        className="inline-flex items-center gap-1.5 px-5 py-[7px] rounded-full text-sm font-semibold text-white cursor-pointer transition-colors duration-150"
+                        style={{ background: "#3b82f6" }}
+                      >
+                        Join
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </motion.span>
+                    </Link>
                   )}
 
                   {isSignedIn && (
@@ -171,8 +160,11 @@ export function Navbar() {
                         <motion.span
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.97 }}
-                          className="hidden sm:inline-flex items-center gap-1.5 px-4 py-[7px] rounded-xl text-sm cursor-pointer transition-colors duration-150"
-                          style={{ color: "rgba(148,163,184,1)" }}
+                          className="hidden sm:inline-flex items-center gap-1.5 px-4 py-[7px] rounded-full text-sm font-medium cursor-pointer transition-colors duration-150"
+                          style={{
+                            background: "#3b82f6",
+                            color: "rgba(255,255,255,1)",
+                          }}
                         >
                           <LayoutDashboard className="h-3.5 w-3.5" />
                           Dashboard
@@ -192,7 +184,7 @@ export function Navbar() {
                   <motion.button
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setMobileOpen((v) => !v)}
-                    className="md:hidden p-2 rounded-xl transition-colors duration-150"
+                    className="md:hidden p-2 rounded-full transition-colors duration-150"
                     style={{ color: "rgba(100,116,139,1)" }}
                   >
                     <AnimatePresence mode="wait" initial={false}>
