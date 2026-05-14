@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
 import { useRef, useEffect, useState, useCallback } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/navbar";
 import {
@@ -80,10 +81,10 @@ function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
 
 // ── Platform marquee ───────────────────────────────────────────────────────────
 const PLATFORMS = [
-  { name: "GitHub",       Icon: GithubIcon, color: "#e2e8f0" },
-  { name: "LeetCode",     Icon: Code2,      color: "#fbbf24" },
-  { name: "Codeforces",   Icon: Trophy,     color: "#f87171" },
-  { name: "CodeChef",     Icon: Star,       color: "#fb923c" },
+  { name: "GitHub", Icon: GithubIcon, color: "#e2e8f0" },
+  { name: "LeetCode", Icon: Code2, color: "#fbbf24" },
+  { name: "Codeforces", Icon: Trophy, color: "#f87171" },
+  { name: "CodeChef", Icon: Star, color: "#fb923c" },
 ];
 
 function Marquee() {
@@ -140,10 +141,10 @@ function ProductPreview() {
           {/* Stats row */}
           <div className="grid grid-cols-4 gap-2.5">
             {[
-              { l: "Streak",    v: "47d",   c: "#fb923c", I: Flame     },
-              { l: "LC Solved", v: "412",   c: "#a78bfa", I: Code2     },
-              { l: "CF Rating", v: "1,892", c: "#f87171", I: Trophy    },
-              { l: "Commits",   v: "2.8K",  c: "#4ade80", I: GitCommit },
+              { l: "Streak", v: "47d", c: "#fb923c", I: Flame },
+              { l: "LC Solved", v: "412", c: "#a78bfa", I: Code2 },
+              { l: "CF Rating", v: "1,892", c: "#f87171", I: Trophy },
+              { l: "Commits", v: "2.8K", c: "#4ade80", I: GitCommit },
             ].map((s) => (
               <div key={s.l} className="rounded-xl p-3 border border-white/[0.06]"
                 style={{ background: "#0e0e22" }}>
@@ -233,7 +234,7 @@ const FEATURES = [
           ))}
         </div>
         <div className="flex items-end gap-0.5 h-10">
-          {[0.1,0.12,0.1,0.11,0.16,0.22,0.28,0.38,0.32,0.28,0.45,0.58,0.42,0.32,0.38,0.5,0.62,0.72,0.88,1,0.82,0.68,0.48,0.28].map((h, i) => (
+          {[0.1, 0.12, 0.1, 0.11, 0.16, 0.22, 0.28, 0.38, 0.32, 0.28, 0.45, 0.58, 0.42, 0.32, 0.38, 0.5, 0.62, 0.72, 0.88, 1, 0.82, 0.68, 0.48, 0.28].map((h, i) => (
             <div key={i} className="flex-1 rounded-sm transition-all"
               style={{ height: `${h * 100}%`, background: `hsl(265 89% 62% / ${h * 0.7 + 0.2})` }} />
           ))}
@@ -253,10 +254,10 @@ const FEATURES = [
         <MiniHeatmap cols={21} rows={7} seed={55123} />
         <div className="grid grid-cols-5 gap-2">
           {[
-            { name: "GitHub",   color: "#e2e8f0", pct: 55 },
+            { name: "GitHub", color: "#e2e8f0", pct: 55 },
             { name: "LeetCode", color: "#fbbf24", pct: 25 },
-            { name: "CF",       color: "#f87171", pct: 10 },
-            { name: "CC",       color: "#fb923c", pct: 6  },
+            { name: "CF", color: "#f87171", pct: 10 },
+            { name: "CC", color: "#fb923c", pct: 6 },
           ].map((p) => (
             <div key={p.name} className="space-y-1">
               <div className="flex justify-between text-[9px]">
@@ -282,10 +283,10 @@ const FEATURES = [
       <div className="rounded-xl p-5 border border-white/[0.07] space-y-2.5" style={{ background: "#0e0e22" }}>
         {[
           { name: "Dynamic Programming", pct: 38, color: "#fb923c" },
-          { name: "Trees & Graphs",      pct: 72, color: "#4ade80" },
-          { name: "Segment Trees",       pct: 5,  color: "#ef4444" },
-          { name: "Sliding Window",      pct: 61, color: "#fbbf24" },
-          { name: "Binary Search",       pct: 89, color: "#4ade80" },
+          { name: "Trees & Graphs", pct: 72, color: "#4ade80" },
+          { name: "Segment Trees", pct: 5, color: "#ef4444" },
+          { name: "Sliding Window", pct: 61, color: "#fbbf24" },
+          { name: "Binary Search", pct: 89, color: "#4ade80" },
         ].map((r) => (
           <div key={r.name} className="space-y-1">
             <div className="flex justify-between text-[10px]">
@@ -333,6 +334,7 @@ const STATIC_TESTIMONIALS = [
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
+  const { isSignedIn } = useAuth();
   const [dynamicTestimonials, setDynamicTestimonials] = useState<
     Array<{ id: string; name: string; role: string | null; message: string }>
   >([]);
@@ -341,15 +343,15 @@ export default function LandingPage() {
     fetch("/api/testimonials")
       .then((r) => r.ok ? r.json() : { data: [] })
       .then((json) => setDynamicTestimonials(json.data ?? []))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const allTestimonials = [
     ...STATIC_TESTIMONIALS,
     ...dynamicTestimonials.map((t, i) => ({
       quote: t.message,
-      name:  t.name,
-      role:  t.role ?? "CodePulse User",
+      name: t.name,
+      role: t.role ?? "CodePulse User",
       color: AVATAR_COLORS[(STATIC_TESTIMONIALS.length + i) % AVATAR_COLORS.length],
     })),
   ];
@@ -382,12 +384,12 @@ export default function LandingPage() {
             variants={stagger} initial="hidden" animate="show"
           >
             {/* Eyebrow badge */}
-            <motion.div variants={fadeUp} className="flex justify-center mb-6">
+            {/* <motion.div variants={fadeUp} className="flex justify-center mb-6">
               <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-violet-500/25 bg-violet-500/[0.06] text-sm text-violet-300 font-medium tracking-wide">
                 <Sparkles className="h-3.5 w-3.5 text-violet-400 shrink-0" />
                 5 platforms · XGBoost ML predictions
               </span>
-            </motion.div>
+            </motion.div> */}
 
             {/* Headline */}
             <motion.h1
@@ -416,19 +418,21 @@ export default function LandingPage() {
             </motion.p>
 
             {/* CTAs */}
-            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-7">
-              <Link href="/sign-up">
-                <Button variant="gradient" size="xl" className="gap-2 min-w-[160px]">
-                  Start for free
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/sign-in">
-                <Button variant="glass" size="xl" className="gap-2 min-w-[140px]">
-                  Sign in
-                </Button>
-              </Link>
-            </motion.div>
+            {!isSignedIn && (
+              <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-7">
+                <Link href="/sign-up">
+                  <Button variant="gradient" size="xl" className="gap-2 min-w-[160px]">
+                    Start for free
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="/sign-in">
+                  <Button variant="glass" size="xl" className="gap-2 min-w-[140px]">
+                    Sign in
+                  </Button>
+                </Link>
+              </motion.div>
+            )}
 
             {/* Social proof */}
             <motion.div variants={fadeUp} className="flex items-center justify-center gap-3 mb-16">
@@ -437,7 +441,7 @@ export default function LandingPage() {
                   <div key={i}
                     className="h-7 w-7 rounded-full border-2 flex items-center justify-center text-[9px] font-bold select-none"
                     style={{ background: c + "28", color: c, borderColor: "#06060f" }}>
-                    {["A","P","R","K","S"][i]}
+                    {["A", "P", "R", "K", "S"][i]}
                   </div>
                 ))}
               </div>
@@ -531,10 +535,10 @@ export default function LandingPage() {
             viewport={{ once: true, margin: "-40px" }}
           >
             {[
-              { n: 5,   s: "",  label: "Platforms",         sub: "All major CP platforms" },
-              { n: 8,   s: "+", label: "ML Predictions",    sub: "Peak, readiness & more"  },
-              { n: 168, s: "",  label: "Hourly data points", sub: "Per-request trained model" },
-              { n: 100, s: "%", label: "Real-time sync",    sub: "Always fresh data"        },
+              { n: 5, s: "", label: "Platforms", sub: "All major CP platforms" },
+              { n: 8, s: "+", label: "ML Predictions", sub: "Peak, readiness & more" },
+              { n: 168, s: "", label: "Hourly data points", sub: "Per-request trained model" },
+              { n: 100, s: "%", label: "Real-time sync", sub: "Always fresh data" },
             ].map((s) => (
               <motion.div key={s.label} variants={fadeUp} className="text-center space-y-2">
                 <p className="text-4xl lg:text-5xl font-extrabold text-white tabular-nums">
@@ -658,8 +662,8 @@ export default function LandingPage() {
             </div>
             <div className="flex items-center gap-7 text-sm text-slate-600">
               <Link href="#features" className="hover:text-white transition-colors duration-200">Features</Link>
-              <Link href="/sign-in"  className="hover:text-white transition-colors duration-200">Sign in</Link>
-              <Link href="/sign-up"  className="hover:text-white transition-colors duration-200">Sign up</Link>
+              <Link href="/sign-in" className="hover:text-white transition-colors duration-200">Sign in</Link>
+              <Link href="/sign-up" className="hover:text-white transition-colors duration-200">Sign up</Link>
             </div>
             <p className="text-xs text-slate-700">© {new Date().getFullYear()} CodePulse.</p>
           </div>
