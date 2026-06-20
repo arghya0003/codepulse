@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 
 from data_preprocessing import DOW_NAMES, build_activity_frame, compute_behavioral
-from feature_engineering import FEATURE_NAMES, add_context, add_cyclical
+from feature_engineering import FEATURE_NAMES, add_cell_features, add_context, add_cyclical, add_time_blocks
 from model import PeakTimeModel
 from train import train_from_records
 
@@ -33,7 +33,9 @@ def _build_features(records: List[Dict]) -> Tuple[pd.DataFrame, Dict, np.ndarray
     df = build_activity_frame(records)
     behavioral = compute_behavioral(records)
     fe = add_cyclical(df)
+    fe = add_time_blocks(fe)
     fe = add_context(fe, behavioral)
+    fe = add_cell_features(fe)
     X = fe[FEATURE_NAMES].values.astype(np.float32)
     return df, behavioral, X
 

@@ -292,6 +292,7 @@ function FactorRow({ label, delta, sub }: { label: string; delta: number; sub?: 
 export function AnalyticsClient({ platforms, snapshots, dbError }: Props) {
   const [mlPeakTime, setMlPeakTime] = useState<MlPeakTimeData | null>(null);
   const [mlLoading, setMlLoading] = useState(true);
+  const [backtestPrecision, setBacktestPrecision] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -300,6 +301,15 @@ export function AnalyticsClient({ platforms, snapshots, dbError }: Props) {
       .then((json) => { if (!cancelled) setMlPeakTime(json?.data ?? null); })
       .catch(() => { if (!cancelled) setMlPeakTime(null); })
       .finally(() => { if (!cancelled) setMlLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/ml/backtest")
+      .then((r) => r.ok ? r.json() : null)
+      .then((json) => { if (!cancelled && json?.success) setBacktestPrecision(json.data?.precision_at_k ?? null); })
+      .catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
@@ -935,7 +945,11 @@ export function AnalyticsClient({ platforms, snapshots, dbError }: Props) {
                       Peak Time Prediction
                     </CardTitle>
                     <Badge variant="outline" className="text-xs text-blue-400 border-blue-400/30">
-                      {mlPeakTime ? `ML · ${mlPeakTime.confidence}%` : `${ml.peakTime.confidence}% confidence`}
+                      {backtestPrecision !== null
+                        ? `Accuracy · ${Math.round(backtestPrecision * 100)}%`
+                        : mlPeakTime
+                          ? `ML · ${mlPeakTime.confidence}%`
+                          : `${ml.peakTime.confidence}% confidence`}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -1053,6 +1067,7 @@ export function AnalyticsClient({ platforms, snapshots, dbError }: Props) {
                             <StatPill label="Peak best" value={ml.peakTime.peakBestDay} color="#60a5fa" />
                             <StatPill label="Active days" value={ml.peakTime.totalActiveDays} color="#60a5fa" />
                           </div>
+
 
                           {/* Top 3 recommended sessions */}
                           {mlPeakTime.recommendation.top_3.length > 0 && (

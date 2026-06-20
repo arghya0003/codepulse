@@ -26,6 +26,7 @@ from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 
 import predict as P
+import backtest as B
 
 # ── App ───────────────────────────────────────────────────────────────────────
 
@@ -63,6 +64,13 @@ class Submission(BaseModel):
 
 class PeakRequest(BaseModel):
     submissions: List[Submission]
+
+
+class BacktestRequest(BaseModel):
+    submissions: List[Submission]
+    test_weeks: int = Field(4,  ge=1, le=12, description="Weeks to hold out per split")
+    n_splits:   int = Field(3,  ge=1, le=5,  description="Number of rolling windows")
+    top_k:      int = Field(10, ge=1, le=50, description="Number of peak slots predicted")
 
 
 class CellRequest(BaseModel):
@@ -143,5 +151,30 @@ def explain(req: CellRequest, _: None = Security(_verify)) -> Dict:
         raise HTTPException(status_code=422, detail="No valid submission records provided")
     try:
         return _ok(P.explain(records, req.day, req.hour))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/backtest")
+def run_backtest(req: BacktestRequest, _: None = Security(_verify)) -> Dict:
+    """
+    Rolling-window backtest — returns the real accuracy of peak-time predictions.
+
+    Splits the submission history into train/test windows, trains on past data,
+    predicts the top-K slots, and checks how many were actually used in the
+    held-out test period.
+
+    Returns precision@K, recall@K, F1@K averaged across all splits.
+    """
+    records = _to_records(req.submissions)
+    if not records:
+        raise HTTPException(status_code=422, detail="No valid submission records provided")
+    try:
+        return _ok(B.backtest(
+            records,
+            test_weeks=req.test_weeks,
+            n_splits=req.n_splits,
+            top_k=req.top_k,
+        ))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

@@ -255,6 +255,26 @@ export async function predictPeakTime(
   }
 }
 
+export async function runBacktest(
+  submissions: Array<{ date?: string; timestamp?: string; count: number }>,
+  options: { test_weeks?: number; n_splits?: number; top_k?: number } = {}
+): Promise<Record<string, unknown> | null> {
+  try {
+    const url = new URL("/backtest", getMlServiceUrl());
+    const response = await fetch(url, {
+      method: "POST",
+      headers: mlHeaders(),
+      body: JSON.stringify({ submissions, ...options }),
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const json = await response.json() as { success: boolean; data?: Record<string, unknown> };
+    return json.success && json.data ? json.data : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Check ML service health
  */

@@ -26,6 +26,8 @@ _HOUR_PRIOR /= _HOUR_PRIOR.sum()
 
 DOW_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
+_DECAY_LAM = 0.005  # matches feature_engineering default
+
 
 def _expand_record(record: Dict[str, Any]) -> List[Dict]:
     """Normalize one record into hourly event dicts."""
@@ -52,15 +54,24 @@ def _expand_record(record: Dict[str, Any]) -> List[Dict]:
     return []
 
 
+def _hits_within(s: pd.Series, days: int) -> int:
+    return int((s <= days).sum())
+
+
+def _cell_recency(s: pd.Series) -> float:
+    return float(np.exp(-_DECAY_LAM * s).sum())
+
+
 def build_activity_frame(records: List[Dict[str, Any]]) -> pd.DataFrame:
     """
     Build the full 168-cell activity DataFrame.
 
     Returns DataFrame with columns:
-        day_of_week (0-6), hour_of_day (0-23), active (0/1), days_old, synthetic
+        day_of_week, hour_of_day, active, days_old, synthetic,
+        cell_hit_count, cell_hit_count_30d, cell_hit_count_90d,
+        cell_days_since_active, cell_recency_score
     Index is reset 0-167, ordered by (day_of_week, hour_of_day).
     """
-    # Complete grid ensures every (day, hour) cell exists
     grid = pd.DataFrame(
         [(d, h) for d in range(7) for h in range(24)],
         columns=["day_of_week", "hour_of_day"],
@@ -72,6 +83,11 @@ def build_activity_frame(records: List[Dict[str, Any]]) -> pd.DataFrame:
         grid["active"] = 0
         grid["days_old"] = 365
         grid["synthetic"] = True
+        grid["cell_hit_count"] = 0
+        grid["cell_hit_count_30d"] = 0
+        grid["cell_hit_count_90d"] = 0
+        grid["cell_days_since_active"] = 365
+        grid["cell_recency_score"] = 0.0
         return grid.reset_index(drop=True)
 
     raw = pd.DataFrame({
@@ -83,16 +99,29 @@ def build_activity_frame(records: List[Dict[str, Any]]) -> pd.DataFrame:
 
     agg = (
         raw.groupby(["day_of_week", "hour_of_day"])
-           .agg(hits=("days_old", "count"), days_old=("days_old", "min"), synthetic=("synthetic", "all"))
+           .agg(
+               cell_hit_count=("days_old", "count"),
+               days_old=("days_old", "min"),
+               synthetic=("synthetic", "all"),
+               cell_hit_count_30d=("days_old", lambda x: _hits_within(x, 30)),
+               cell_hit_count_90d=("days_old", lambda x: _hits_within(x, 90)),
+               cell_recency_score=("days_old", _cell_recency),
+           )
            .reset_index()
     )
-    agg["active"] = (agg["hits"] > 0).astype(int)
-    agg = agg.drop(columns="hits")
+    agg["active"] = (agg["cell_hit_count"] > 0).astype(int)
+    # days since last event in this cell = min(days_old) already computed above
+    agg["cell_days_since_active"] = agg["days_old"]
 
     merged = grid.merge(agg, on=["day_of_week", "hour_of_day"], how="left")
-    merged["active"]    = merged["active"].fillna(0).astype(int)
-    merged["days_old"]  = merged["days_old"].fillna(365).astype(int)
-    merged["synthetic"] = merged["synthetic"].fillna(value=True).astype(bool)
+    merged["active"]               = merged["active"].fillna(0).astype(int)
+    merged["days_old"]             = merged["days_old"].fillna(365).astype(int)
+    merged["synthetic"]            = merged["synthetic"].fillna(True).astype(bool)
+    merged["cell_hit_count"]       = merged["cell_hit_count"].fillna(0).astype(int)
+    merged["cell_hit_count_30d"]   = merged["cell_hit_count_30d"].fillna(0).astype(int)
+    merged["cell_hit_count_90d"]   = merged["cell_hit_count_90d"].fillna(0).astype(int)
+    merged["cell_days_since_active"] = merged["cell_days_since_active"].fillna(365).astype(int)
+    merged["cell_recency_score"]   = merged["cell_recency_score"].fillna(0.0)
     return merged.reset_index(drop=True)
 
 
